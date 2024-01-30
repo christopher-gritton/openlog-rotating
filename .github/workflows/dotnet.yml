@@ -12,20 +12,17 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
-    strategy:
-    matrix:
-      dotnet-version: [ '8.0.x' ]
+    runs-on: ubuntu-latest 
 
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ matrix.dotnet-version }}
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+    steps: 
+    - uses: actions/checkout@v4 
+    - name: Setup dotnet
+    uses: actions/setup-dotnet@v3
+  with:
+    dotnet-version: '8.0.x' 
+  - name: Install dependencies
+  run: dotnet restore
+  - name: Build
+  run: dotnet build
+  - name: Test with the dotnet CLI
+  run: dotnet test

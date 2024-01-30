@@ -32,6 +32,6 @@ jobs:
       working-directory: ./ElkCreekServices.OpenScripts.Logging
       run: dotnet build --configuration Release
     - name: Pack
-      working-directory: ./ElkCreekServices.OpenScripts.Logging
-      run: dotnet pack --configuration Release ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging.proj
+      working-directory: ./ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging
+      run: dotnet pack --configuration Release ElkCreekServices.OpenScripts.Logging.csproj
 

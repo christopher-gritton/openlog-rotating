@@ -27,7 +27,7 @@ jobs:
       run: dotnet --version
     - name: Install dependencies
       working-directory: ./ElkCreekServices.OpenScripts.Logging
-      run: dotnet restore --configuration Release 
+      run: dotnet restore
     - name: Build
       working-directory: ./ElkCreekServices.OpenScripts.Logging
       run: dotnet build --configuration Release

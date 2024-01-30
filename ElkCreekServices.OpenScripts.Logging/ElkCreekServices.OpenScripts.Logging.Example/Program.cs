@@ -1,18 +1,7 @@
-# openlog-rotating
-Rotating file logging library for C#
+﻿// See https://aka.ms/new-console-template for more information
 
-This library is a simple file logging library that supports log rotation. It can be used with or without Microsoft.Extensions.Logging.
-The number of days to keep the log files can be configured. The library will automatically delete log files older than the specified number of days.
-The maximum file size for a log file before it is rotated can also be configured. The library will automatically rotate the log file when the maximum file size is reached.
-
-
-## Usage with Microsoft.Extensions.Logging
-
-```csharp
-
-```csharp
-
-using ElkCreekServices.OpenScripts.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace ElkCreekServices.OpenScripts.Logging.Example;
 
@@ -23,9 +12,10 @@ class Program
         using var loggerFactory = LoggerFactory.Create(builder =>
         {
             builder
+                .ClearProviders()
                 .AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("System", LogLevel.Warning)
-                .AddFilter("OpenScripts.Logging.Example", LogLevel.Warning) // set the log level for this namespace
+                .AddFilter("OpenScripts.Logging.Example", LogLevel.Warning)
                 .AddRotatingFileLogger((configuration) =>
                 {
                     configuration.LogLevel = LogLevel.Debug;
@@ -37,9 +27,7 @@ class Program
                 });
         });
 
-        // Create a logger
         ILogger logger = loggerFactory.CreateLogger<Program>();
-
         logger.LogInformation("Example log message");
 
         using (var scopedLogger = logger.BeginScope("scopeId"))
@@ -51,38 +39,43 @@ class Program
                 logger.LogWarning("Example nested scoped log warning");
             }
         }
+
+
+        Console.WriteLine("Press enter to exit");
+        Console.ReadLine();
+
+        initInternally();
+
     }
-}
 
-```
-
-
-## Usage without Microsoft.Extensions.Logging.LoggerFactory
-
-`Note: The library will still have dependencies on the Microsoft.Extensions.Logging.Abstractions and Microsoft.Extensions.Logging.Configuration packages`
-
-
-```csharp
-
-using ElkCreekServices.OpenScripts.Logging;
-
-namespace ElkCreekServices.OpenScripts.Logging.Example;
-
-class Program
-{
-    static void Main(string[] args)
+    static void initInternally()
     {
+
+        // Read the app settings file, you can add secrets and additional files here
+        var builder = new ConfigurationBuilder()
+       .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+        // Build the configuration
+        var configuration = builder.Build();
+
+        // Load the section for the logger
+        var loggingConfig = configuration.GetSection("Logging:RotatingFile");
+        //create a new configuration
+        var rotatingConfiguration = new Configurations.Configuration()
+        {
+            LogLevel = loggingConfig.GetValue("LogLevel", LogLevel.Debug)!,
+            ConsoleLoggingEnabled = true,
+            Filename = new System.IO.FileInfo(loggingConfig.GetValue("Filename", "internal_log.txt")!),
+            IncludeDateTime = bool.Parse(loggingConfig.GetValue("IncludeDateTime", "true")!),
+            IsUtcTime = bool.Parse(loggingConfig.GetValue("IsUtcTime", "true")!),
+            PurgeAfterDays = int.Parse(loggingConfig.GetValue("PurgeAfterDays", "2")!),
+            MaximumLogFileSizeKB = int.Parse(loggingConfig.GetValue("MaximumLogFileSizeKB", "1024")!)
+        };
+
         using RotatingFileLogger logger = new RotatingFileLogger("Example Logger", () =>
         {
-            return new Configurations.Configuration()
-            {
-                LogLevel = LogLevel.Debug,
-                ConsoleLoggingEnabled = true,
-                Filename = new System.IO.FileInfo("internal_log.txt"),
-                IncludeDateTime = true,
-                IsUtcTime = true,
-                PurgeAfterDays = 2
-            };
+            return rotatingConfiguration;
         });
 
         logger.LogInformation("Example log message"); //extension methods for log levels
@@ -99,12 +92,8 @@ class Program
 
         //non - extension methods for log levels
         logger.Log(LogLevel.Information, new EventId(0), "Example log message without extension methods");
+
     }
+
 }
 
-```
-
-#### Todo 
-
-- Finish unit tests
-- Update documentation

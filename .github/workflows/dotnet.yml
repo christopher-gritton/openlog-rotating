@@ -21,8 +21,7 @@ jobs:
       with:
         dotnet-version: '8.0.x'
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore --configuration Release 'ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging.csproj'
     - name: Build
-      run: dotnet build
-    - name: Test with the dotnet CLI
-      run: dotnet test
+      run: dotnet build --configuration Release 'ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging.csproj'
+

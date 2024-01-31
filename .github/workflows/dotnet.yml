@@ -34,4 +34,7 @@ jobs:
     - name: Pack
       working-directory: ./ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging
       run: dotnet pack --configuration Release ElkCreekServices.OpenScripts.Logging.csproj
+    - name: Push
+      working-directory: ./ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging
+      run: dotnet nuget push "bin/Release/ElkCreekServices.OpenScripts.Logging.1.0.0.nupkg" --source "github"
 

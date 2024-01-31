@@ -7,6 +7,7 @@
     <Version>1.0.0.0</Version>
     <VersionSuffix></VersionSuffix>
     <Authors>Christopher B. Gritton</Authors>
+    <PackageProjectUrl>https://github.com/christopher-gritton/openlog-rotating</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

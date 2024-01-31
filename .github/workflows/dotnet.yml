@@ -36,7 +36,5 @@ jobs:
       run: dotnet pack --configuration Release ElkCreekServices.OpenScripts.Logging.csproj
     - name: Push
       working-directory: ./ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging
-      run: dotnet nuget push "bin/Release/ElkCreekServices*.nupkg" -k ${PACKAGE_TOKEN} --source "github"
-      env:
-        PACKAGE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: dotnet nuget push "bin/Release/ElkCreekServices*.nupkg" -k ${{ secrets.OPENLOG_PACKAGE_TOKEN }} --source "github"
 

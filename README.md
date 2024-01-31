@@ -1,3 +1,6 @@
+
+[![Build](https://github.com/christopher-gritton/openlog-rotating/actions/workflows/dotnet.yml/badge.svg)](https://github.com/christopher-gritton/openlog-rotating/actions/workflows/dotnet.yml)
+
 # openlog-rotating
 Rotating file logging library for C#
 

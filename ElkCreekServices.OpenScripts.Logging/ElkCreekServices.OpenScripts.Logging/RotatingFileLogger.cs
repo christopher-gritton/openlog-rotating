@@ -78,8 +78,11 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
     /// <param name="logLevel"></param>
     /// <returns></returns>
     public bool IsEnabled(LogLevel logLevel) {
-        (_configuration ?? DefaultConfiguration).LogLevel = logLevel;
-        return true;
+        if (logLevel >= (_configuration ?? DefaultConfiguration).LogLevel && logLevel != LogLevel.None)
+        {
+            return true;
+        }
+        return false;
     }
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -107,7 +110,8 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
         {
             Message = $"[{eventId}, {logLevel.ToString()}] {(string.IsNullOrWhiteSpace(scopeEntry) ? string.Empty : "[" + scopeEntry + "] ")}{message}",
             IncludeDateTime = config.IncludeDateTime,
-            IsUtcTime = config.IsUtcTime
+            IsUtcTime = config.IsUtcTime,
+            LogLevel = logLevel
         };
 
         //queue the log entry
@@ -187,7 +191,27 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
 
                         //write log entry
                         sb.Append(e.ToString());
-
+                        //if configuration includes write to console and console is enabled, write to console
+                        if (_configuration.ConsoleLoggingEnabled == true && Environment.UserInteractive)
+                        {
+                            //only write to console if log level is enabled
+                            if (e.LogLevel != LogLevel.None && e.LogLevel >= _configuration.ConsoleMinLevel)
+                            {
+                                var color = Console.ForegroundColor;
+                                Console.ForegroundColor = e.LogLevel switch
+                                {
+                                    LogLevel.Trace => ConsoleColor.DarkGray,
+                                    LogLevel.Debug => ConsoleColor.Gray,
+                                    LogLevel.Information => ConsoleColor.Cyan,
+                                    LogLevel.Warning => ConsoleColor.DarkYellow,
+                                    LogLevel.Error => ConsoleColor.DarkRed,
+                                    LogLevel.Critical => ConsoleColor.Red,
+                                    _ => ConsoleColor.White
+                                };
+                                Console.WriteLine(sb.ToString().TrimEnd());
+                                Console.ForegroundColor = color;
+                            }
+                        }
 
                         try
                         {

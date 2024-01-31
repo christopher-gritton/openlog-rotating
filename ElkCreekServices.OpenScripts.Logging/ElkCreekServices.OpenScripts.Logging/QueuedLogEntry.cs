@@ -1,10 +1,13 @@
-﻿namespace ElkCreekServices.OpenScripts.Logging;
+﻿using Microsoft.Extensions.Logging;
+
+namespace ElkCreekServices.OpenScripts.Logging;
 internal class QueuedLogEntry
 {
     private DateTime Timestamp { get; set; } = DateTime.UtcNow;
     public string Message { get; set; } = string.Empty;
     public bool IncludeDateTime { get; set; } = true;
     public bool IsUtcTime { get; set; } = true;
+    public LogLevel LogLevel { get; set; } = LogLevel.None;
 
     public override string ToString()
     {

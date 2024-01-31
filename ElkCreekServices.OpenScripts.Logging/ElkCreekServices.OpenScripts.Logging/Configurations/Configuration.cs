@@ -30,6 +30,11 @@ public class Configuration
     public LogLevel LogLevel { get; set; } = LogLevel.None;
 
     /// <summary>
+    /// The minimum level to log to the console
+    /// </summary>
+    public LogLevel ConsoleMinLevel { get; set; } = LogLevel.Error;
+
+    /// <summary>
     /// If console logging is enabled
     /// </summary>
     public bool ConsoleLoggingEnabled { get; set; } = false;

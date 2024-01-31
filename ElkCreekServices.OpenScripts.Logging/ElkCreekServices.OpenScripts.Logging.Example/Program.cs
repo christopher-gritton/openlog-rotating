@@ -15,11 +15,12 @@ class Program
                 .ClearProviders()
                 .AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("System", LogLevel.Warning)
-                .AddFilter("OpenScripts.Logging.Example", LogLevel.Warning)
+                .AddFilter("ElkCreekServices.OpenScripts.Logging.Example", LogLevel.Trace)
                 .AddRotatingFileLogger((configuration) =>
                 {
-                    configuration.LogLevel = LogLevel.Debug;
+                    configuration.LogLevel = LogLevel.Trace;
                     configuration.ConsoleLoggingEnabled = true;
+                    configuration.ConsoleMinLevel = LogLevel.Trace;
                     configuration.Filename = new System.IO.FileInfo("log.txt");
                     configuration.IncludeDateTime = true;
                     configuration.IsUtcTime = true;
@@ -33,6 +34,10 @@ class Program
         using (var scopedLogger = logger.BeginScope("scopeId"))
         {
             logger.LogInformation("Example scoped log message");
+            logger.LogCritical("Critical message");
+            logger.LogDebug("Debug message");
+            logger.LogTrace("Trace message");
+            logger.LogError("Error message");
             using (var nestedScopedLogger = logger.BeginScope("nestedScopeId"))
             {
                 logger.LogInformation("Example nested scoped log message");

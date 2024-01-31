@@ -1,7 +1,5 @@
 
-[![Build](https://github.com/christopher-gritton/openlog-rotating/actions/workflows/dotnet.yml/badge.svg)](https://github.com/christopher-gritton/openlog-rotating/actions/workflows/dotnet.yml)
-
-# openlog-rotating
+# openlog-rotating  [![Build](https://github.com/christopher-gritton/openlog-rotating/actions/workflows/dotnet.yml/badge.svg)](https://github.com/christopher-gritton/openlog-rotating/actions/workflows/dotnet.yml)
 Rotating file logging library for C#
 
 This library is a simple file logging library that supports log rotation. It can be used with or without Microsoft.Extensions.Logging.

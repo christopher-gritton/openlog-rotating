@@ -11,8 +11,6 @@ The maximum file size for a log file before it is rotated can also be configured
 
 ```csharp
 
-```csharp
-
 using ElkCreekServices.OpenScripts.Logging;
 
 namespace ElkCreekServices.OpenScripts.Logging.Example;

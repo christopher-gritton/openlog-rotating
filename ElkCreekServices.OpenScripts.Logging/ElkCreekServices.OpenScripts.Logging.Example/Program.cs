@@ -31,17 +31,20 @@ class Program
         ILogger logger = loggerFactory.CreateLogger<Program>();
         logger.LogInformation("Example log message");
 
-        using (var scopedLogger = logger.BeginScope("scopeId"))
+        using (logger.BeginScope("scopeId"))
         {
             logger.LogInformation("Example scoped log message");
             logger.LogCritical("Critical message");
             logger.LogDebug("Debug message");
             logger.LogTrace("Trace message");
             logger.LogError("Error message");
-            using (var nestedScopedLogger = logger.BeginScope("nestedScopeId"))
+            using (logger.BeginScope("nestedScopeId"))
             {
                 logger.LogInformation("Example nested scoped log message");
-                logger.LogWarning("Example nested scoped log warning");
+                using (logger.BeginScope("nestedScopeId2"))
+                {
+                    logger.LogWarning("Example nested scoped log warning");
+                }
             }
         }
 
@@ -85,10 +88,10 @@ class Program
 
         logger.LogInformation("Example log message"); //extension methods for log levels
 
-        using (var scopedLogger = logger.BeginScope("scopeId"))
+        using (logger.BeginScope("scopeId"))
         {
             logger.LogInformation("Example scoped log message");
-            using (var nestedScopedLogger = logger.BeginScope("nestedScopeId"))
+            using (logger.BeginScope("nestedScopeId"))
             {
                 logger.LogInformation("Example nested scoped log message");
                 logger.LogWarning("Example nested scoped log warning");

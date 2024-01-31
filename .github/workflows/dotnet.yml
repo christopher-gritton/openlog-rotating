@@ -36,7 +36,7 @@ jobs:
       run: dotnet pack --configuration Release ElkCreekServices.OpenScripts.Logging.csproj
     - name: Push
       working-directory: ./ElkCreekServices.OpenScripts.Logging/ElkCreekServices.OpenScripts.Logging
-      run: dotnet nuget push "bin/Release/ElkCreekServices.OpenScripts.Logging.1.0.0.nupkg" -k ${PACKAGE_TOKEN} -s https://nuget.pkg.github.com/christopher-gritton/index.json
+      run: dotnet nuget push "bin/Release/ElkCreekServices*.nupkg" -k ${PACKAGE_TOKEN} --source "github"
       env:
         PACKAGE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

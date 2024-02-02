@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
 using ElkCreekServices.OpenScripts.Logging.Providers;
+using ElkCreekServices.OpenScripts.Logging.Scope;
 
 namespace ElkCreekServices.OpenScripts.Logging;
 
@@ -44,6 +45,26 @@ public static class RotatingFileLoggerExtensions
         builder.Services.Configure(configure);
 
         return builder;
+    }
+
+    /// <summary>
+    /// Creates a scoped instance of the logger
+    /// </summary>
+    /// <typeparam name="TState"></typeparam>
+    /// <param name="logger"></param>
+    /// <param name="state"></param>
+    /// <param name="scopeid"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    public static IScopedLogger BeginScope<TState>(this ILogger logger, TState state, string scopeid) where TState : notnull
+    {
+        if (logger == null) throw new ArgumentNullException("logger", "The logger cannot be null when calling BeginScope.");
+
+        IScopedLogger? scopedLogger = null;
+        IDisposable? externalscope = logger.BeginScope(state);
+        scopedLogger = new ScopedLogger(state?.ToString() ?? Guid.NewGuid().ToString(), logger, externalscope, scopeid);
+
+        return scopedLogger;
     }
 
 }

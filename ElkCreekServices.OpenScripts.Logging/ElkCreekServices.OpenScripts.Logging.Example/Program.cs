@@ -48,11 +48,68 @@ class Program
             }
         }
 
+        List<Task> tasks = new List<Task>();
+
+        Action<int> taskAction = (i) =>
+        {
+            using (logger.BeginScope("running-bg-task-outer"))
+            {
+                /* 
+                  The logger is thread safe, so we can use it in a multi-threaded environment.
+                  We can also use the BeginScope method to add a scope and use the extension method that
+                  returns an IScopedLogger which we can use to log with a unique id for the scope. This is very useful
+                  in multi threaded environments where we want to track the logs for a specific task.
+                */
+
+                using (var scoped = logger.BeginScope("running-bg-task", Guid.NewGuid().ToString()))
+                {
+                    try
+                    {
+                        string _taskId = "task" + i;
+
+                        scoped.LogInformation("Task " + i + " is running");
+                        scoped.LogWarning("The task is going to sleep for 1 second");
+                        System.Threading.Thread.Sleep(1000);
+                        if (i % 7 == 0) { throw new Exception("Task " + i + " failed"); }
+                        if (i % 25 == 0) { throw new ArgumentOutOfRangeException("Task " + i + " is out of range"); }
+                        scoped.LogInformation("Task " + i + " is complete");
+                    }
+                    catch (ArgumentOutOfRangeException aorex)
+                    {
+                        scoped.LogCritical(aorex, "A critical error has occurred");
+                    }
+                    catch (Exception ex)
+                    {
+                        scoped.LogError(ex, "An error occurred in the background task");
+                    }
+                }
+            }
+        };
+
+        using (logger.BeginScope("background-tasks"))
+        {
+            for (int i = 0; i < 50; i++)
+            {
+
+                int index = i;
+                logger.LogInformation("Starting task " + i);
+                tasks.Add(Task.Run(() => taskAction(index)));
+
+            }
+
+            Task.WhenAll(tasks.ToArray()).GetAwaiter().GetResult();
+        }
+
+        //give enough time for logger to finish writing to console for clean example screenshot
+        Task.Delay(1000).GetAwaiter().GetResult();
 
         Console.WriteLine("Press enter to exit");
         Console.ReadLine();
 
         initInternally();
+
+        Console.WriteLine("Press enter to exit");
+        Console.ReadLine();
 
     }
 
@@ -74,6 +131,7 @@ class Program
         {
             LogLevel = loggingConfig.GetValue("LogLevel", LogLevel.Debug)!,
             ConsoleLoggingEnabled = true,
+            ConsoleMinLevel = LogLevel.Trace,
             Filename = new System.IO.FileInfo(loggingConfig.GetValue("Filename", "internal_log.txt")!),
             IncludeDateTime = bool.Parse(loggingConfig.GetValue("IncludeDateTime", "true")!),
             IsUtcTime = bool.Parse(loggingConfig.GetValue("IsUtcTime", "true")!),

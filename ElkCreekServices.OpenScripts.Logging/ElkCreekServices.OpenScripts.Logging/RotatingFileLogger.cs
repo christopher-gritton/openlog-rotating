@@ -4,7 +4,7 @@ using ElkCreekServices.OpenScripts.Logging.Configurations;
 using ElkCreekServices.OpenScripts.Logging.Scope;
 
 namespace ElkCreekServices.OpenScripts.Logging;
-public sealed class RotatingFileLogger : ILogger, IDisposable
+public sealed class RotatingFileLogger : IScopedLogger
 {
 
     // list of scoped loggers
@@ -30,6 +30,7 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
 
     // default configuration in case one isn't provided
     public static Configurations.Configuration DefaultConfiguration { get; } = new Configurations.Configuration();
+    public string ScopeId { get; private set; } = string.Empty;
 
     public RotatingFileLogger(string name, Func<Configurations.Configuration> getConfiguration)
     {
@@ -42,18 +43,30 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
         _watchlog.Start(_cts.Token);
     }
 
+    /*
+     Default beginscope implementation
+     */
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+    {
+        return BeginScope<TState>(state, string.Empty);
+    }
 
     /// <summary>
-    /// Create a new scoped logger
+    /// Create a scoped logger
     /// </summary>
     /// <typeparam name="TState"></typeparam>
     /// <param name="state"></param>
+    /// <param name="scopeid"></param>
     /// <returns></returns>
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+    public IDisposable? BeginScope<TState>(TState state, string scopeid) where TState : notnull
     {
-        //create a new scope
-        var newScope = new ScopedLogger(state.ToString() ?? Guid.NewGuid().ToString());
-        this._scopedLoggers.Add(newScope);
+        //This scope object doesn't need an external scope so setting it to null
+        var newScope = new ScopedLogger(state.ToString() ?? Guid.NewGuid().ToString(), this, null, scopeid);
+        lock (scopeLock)
+        {
+            this._scopedLoggers.Add(newScope);
+        }
+
         //remove from scoped loggers when disposed
         newScope.Disposing += (sender, disposing) =>
         {
@@ -99,7 +112,7 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
         //log the message with scopes if exist
         lock (scopeLock)
         {
-             scopeEntry = string.Join(":", _scopedLoggers.Select(x => x.Id));
+             scopeEntry = string.Join(":", _scopedLoggers.Select(x => x.Id).Distinct());
         }
 
         // get the formatted message
@@ -202,7 +215,7 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
                                 {
                                     LogLevel.Trace => ConsoleColor.DarkGray,
                                     LogLevel.Debug => ConsoleColor.Gray,
-                                    LogLevel.Information => ConsoleColor.Cyan,
+                                    LogLevel.Information => ConsoleColor.DarkCyan,
                                     LogLevel.Warning => ConsoleColor.DarkYellow,
                                     LogLevel.Error => ConsoleColor.DarkRed,
                                     LogLevel.Critical => ConsoleColor.Red,
@@ -327,11 +340,14 @@ public sealed class RotatingFileLogger : ILogger, IDisposable
             //dispose scopes
             if (disposing)
             {
-                foreach (var scope in _scopedLoggers)
+                lock (scopeLock)
                 {
-                    scope.Dispose();
+                    foreach (var scope in _scopedLoggers)
+                    {
+                        scope.Dispose();
+                    }
+                    _scopedLoggers.Clear();
                 }
-                _scopedLoggers.Clear();
             }
             _disposedValue = true;
         }

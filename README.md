@@ -103,6 +103,10 @@ class Program
 
 ```
 
+### Example of output to console
+
+![Output to console example](./console_log_example.PNG)  
+
 #### Todo 
 
 - Finish unit tests

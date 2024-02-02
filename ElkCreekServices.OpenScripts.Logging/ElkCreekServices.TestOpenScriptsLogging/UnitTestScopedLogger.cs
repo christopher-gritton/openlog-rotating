@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
-using ElkCreekServices.OpenScripts.Logging;
+﻿using ElkCreekServices.OpenScripts.Logging;
+using ElkCreekServices.OpenScripts.Logging.Configurations;
+using Microsoft.Extensions.Logging;
 
 namespace TestOpenScriptsLogging;
 
@@ -19,14 +19,15 @@ public class UnitTestScopedLogger
                 .AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("System", LogLevel.Warning)
                 .AddFilter("TestOpenScriptsLogging", LogLevel.Debug)
-                .AddRotatingFileLogger((configuration) =>
+                .AddRotatingFileLogger(() => new Configuration()
                 {
-                    configuration.LogLevel = LogLevel.Debug;
-                    configuration.ConsoleLoggingEnabled = true;
-                    configuration.Filename = new System.IO.FileInfo("log.txt");
-                    configuration.IncludeDateTime = true;
-                    configuration.IsUtcTime = true;
-                    configuration.PurgeAfterDays = 2;
+                    LogLevel = LogLevel.Debug,
+                    ConsoleLoggingEnabled = true,
+                    ConsoleMinLevel = LogLevel.Debug,
+                    Filename = new System.IO.FileInfo("log_scoped_multilogger.txt"),
+                    IncludeDateTime = true,
+                    IsUtcTime = true,
+                    PurgeAfterDays = 2,
                 });
         });
        

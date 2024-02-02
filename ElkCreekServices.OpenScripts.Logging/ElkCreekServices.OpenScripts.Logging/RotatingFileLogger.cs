@@ -17,6 +17,8 @@ public sealed class RotatingFileLogger : IScopedLogger
     private object queueLock = new { queuelock = "locked" };
     // scope lock
     private object scopeLock = new { scopelock = "locked" };
+    // console lock
+    private static object consoleLock = new { consolelock = "locked" };
     // cancellation token source
     private CancellationTokenSource _cts = new CancellationTokenSource();
     // queue of log entries
@@ -171,7 +173,23 @@ public sealed class RotatingFileLogger : IScopedLogger
                 {
                     _sw.Dispose();
                 }
-                _sw = new StreamWriter(config.Filename.FullName, true, Encoding.UTF8, 65536) { AutoFlush = true };
+                try {
+                    _sw = new StreamWriter(config.Filename.FullName, true, Encoding.UTF8, 65536) { AutoFlush = true };
+                }
+                catch (IOException ex)
+                {
+                    System.Diagnostics.Trace.TraceError(ex.ToString());
+
+                    if (config.AttemptAutoFileRenameOnIOException == true)
+                    {
+                        //attempt to create a new file name in case another logger with same name is writing to the file
+                        string extension = config.Filename.Extension;
+                        string filename = config.Filename.Name.Replace(extension, "");
+                        string newname = $"{filename}_[{Guid.NewGuid().ToString()}]".CreateValidLogFileName();
+                        config.Filename = new FileInfo(System.IO.Path.Combine(config.Filename.DirectoryName!, newname + extension));
+                        _sw = new StreamWriter(config.Filename.FullName, true, Encoding.UTF8, 65536) { AutoFlush = true };
+                    }
+                }                
             }
         }
     }
@@ -215,19 +233,22 @@ public sealed class RotatingFileLogger : IScopedLogger
                             //only write to console if log level is enabled
                             if (e.LogLevel != LogLevel.None && e.LogLevel >= _configuration.ConsoleMinLevel)
                             {
-                                var color = Console.ForegroundColor;
-                                Console.ForegroundColor = e.LogLevel switch
+                                lock (consoleLock)
                                 {
-                                    LogLevel.Trace => ConsoleColor.DarkGray,
-                                    LogLevel.Debug => ConsoleColor.Gray,
-                                    LogLevel.Information => ConsoleColor.DarkCyan,
-                                    LogLevel.Warning => ConsoleColor.DarkYellow,
-                                    LogLevel.Error => ConsoleColor.DarkRed,
-                                    LogLevel.Critical => ConsoleColor.Red,
-                                    _ => ConsoleColor.White
-                                };
-                                Console.WriteLine(sb.ToString().TrimEnd());
-                                Console.ForegroundColor = color;
+                                    var color = Console.ForegroundColor;
+                                    Console.ForegroundColor = e.LogLevel switch
+                                    {
+                                        LogLevel.Trace => ConsoleColor.DarkGray,
+                                        LogLevel.Debug => ConsoleColor.Gray,
+                                        LogLevel.Information => ConsoleColor.DarkCyan,
+                                        LogLevel.Warning => ConsoleColor.DarkYellow,
+                                        LogLevel.Error => ConsoleColor.DarkRed,
+                                        LogLevel.Critical => ConsoleColor.Red,
+                                        _ => ConsoleColor.White
+                                    };
+                                    Console.WriteLine(sb.ToString().TrimEnd());
+                                    Console.ForegroundColor = color;
+                                }
                             }
                         }
 

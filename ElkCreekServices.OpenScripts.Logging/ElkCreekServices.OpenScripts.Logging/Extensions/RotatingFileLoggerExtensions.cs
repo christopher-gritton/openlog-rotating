@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using ElkCreekServices.OpenScripts.Logging.Providers;
+using ElkCreekServices.OpenScripts.Logging.Scope;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
-using ElkCreekServices.OpenScripts.Logging.Providers;
-using ElkCreekServices.OpenScripts.Logging.Scope;
 
 namespace ElkCreekServices.OpenScripts.Logging;
 
@@ -21,8 +21,10 @@ public static class RotatingFileLoggerExtensions
     public static ILoggingBuilder AddRotatingFileLogger(this ILoggingBuilder builder)
     {
         builder.AddConfiguration();
+
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, RotatingFileLoggerProvider>());
-        LoggerProviderOptions.RegisterProviderOptions<Configurations.Configuration, RotatingFileLoggerProvider>(builder.Services);
+       
+        //LoggerProviderOptions.RegisterProviderOptions<Configurations.Configuration, RotatingFileLoggerProvider>(builder.Services);
 
         return builder;
     }
@@ -34,7 +36,7 @@ public static class RotatingFileLoggerExtensions
     /// <param name="configure"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static ILoggingBuilder AddRotatingFileLogger(this ILoggingBuilder builder, Action<Configurations.Configuration> configure)
+    public static ILoggingBuilder AddRotatingFileLogger(this ILoggingBuilder builder, Func<Configurations.Configuration> configure, string? categoryName = null)
     {
         if (configure == null)
         {
@@ -42,7 +44,7 @@ public static class RotatingFileLoggerExtensions
         }
 
         builder.AddRotatingFileLogger();
-        builder.Services.Configure(configure);
+        RotatingFileLoggerProvider.AddConfiguration(configure, categoryName);
 
         return builder;
     }
@@ -65,6 +67,22 @@ public static class RotatingFileLoggerExtensions
         scopedLogger = new ScopedLogger(state?.ToString() ?? Guid.NewGuid().ToString(), logger, externalscope, scopeid);
 
         return scopedLogger;
+    }
+
+
+    public static void d(this ILogger logger, string message)
+    {
+        logger.LogDebug(message);
+    }
+
+    public static void i(this ILogger logger, string message)
+    {
+        logger.LogInformation(message);
+    }
+
+    public static void w(this ILogger logger, string message)
+    {
+        logger.LogWarning(message);
     }
 
 }

@@ -1,12 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.Versioning;
+using ElkCreekServices.OpenScripts.Logging.Configurations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ElkCreekServices.OpenScripts.Logging.Providers;
 
 /// <summary>
-/// A logger provider that logs to a rotating file
+/// A logger provider that creates a rotating file logger
 /// </summary>
 [UnsupportedOSPlatform("browser")]
 [ProviderAlias("RotatingFile")]
@@ -14,26 +15,37 @@ public sealed class RotatingFileLoggerProvider : ILoggerProvider
 {
 
     private IDisposable? _onchangeToken;
-    private Configurations.Configuration _currentConfiguration;
+    private static ConcurrentDictionary<string, Configuration> Configurations = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, RotatingFileLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
 
-
-    /// <summary>
-    /// Constructor with options
-    /// </summary>
-    /// <param name="options"></param>
-    public RotatingFileLoggerProvider(IOptionsMonitor<Configurations.Configuration> options)
+    internal static void AddConfiguration(Func<Configuration> configuration, string? name)
     {
-       _currentConfiguration = options.CurrentValue;
-       _onchangeToken = options.OnChange((config, name) => _currentConfiguration = config);
-    }   
+        Configurations.AddOrUpdate(name ?? "default", configuration(), (key, oldValue) => configuration());
+    }
+
+    public RotatingFileLoggerProvider()
+    {
+        
+    }
 
     /// <summary>
     /// Create a logger
     /// </summary>
     /// <param name="categoryName"></param>
     /// <returns></returns>
-    public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, name => new RotatingFileLogger(name, () => _currentConfiguration));
+    public ILogger CreateLogger(string categoryName)
+    {
+        if (Configurations.ContainsKey(categoryName))
+        {
+            return _loggers.GetOrAdd(categoryName, name => new RotatingFileLogger(name, () => Configurations[name]));
+        }
+        else
+        {
+            return _loggers.GetOrAdd("default", name => new RotatingFileLogger(name, () => Configurations.GetOrAdd(name, name => new Configuration())));
+        }
+    }
+
+
 
     /// <summary>
     /// Dispose

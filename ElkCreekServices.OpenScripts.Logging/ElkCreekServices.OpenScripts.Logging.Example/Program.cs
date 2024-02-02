@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using ElkCreekServices.OpenScripts.Logging.Factory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -177,7 +178,7 @@ class Program
             MaximumLogFileSizeKB = int.Parse(loggingConfig.GetValue("MaximumLogFileSizeKB", "1024")!)
         };
 
-        using RotatingFileLogger logger = new RotatingFileLogger("Example Logger", () =>
+        using RotatingFileLoggerFactory logger = new RotatingFileLoggerFactory("Example Logger", () =>
         {
             return rotatingConfiguration;
         });

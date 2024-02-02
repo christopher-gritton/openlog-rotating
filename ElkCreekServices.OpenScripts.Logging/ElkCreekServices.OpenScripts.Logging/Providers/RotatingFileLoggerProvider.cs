@@ -1,8 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.Versioning;
 using ElkCreekServices.OpenScripts.Logging.Configurations;
+using ElkCreekServices.OpenScripts.Logging.Factory;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace ElkCreekServices.OpenScripts.Logging.Providers;
 
@@ -16,7 +16,7 @@ public sealed class RotatingFileLoggerProvider : ILoggerProvider
 
     private IDisposable? _onchangeToken;
     private static ConcurrentDictionary<string, Configuration> Configurations = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, RotatingFileLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, RotatingFileLoggerFactory> _loggers = new(StringComparer.OrdinalIgnoreCase);
 
     internal static void AddConfiguration(Func<Configuration> configuration, string? name)
     {
@@ -37,11 +37,11 @@ public sealed class RotatingFileLoggerProvider : ILoggerProvider
     {
         if (Configurations.ContainsKey(categoryName))
         {
-            return _loggers.GetOrAdd(categoryName, name => new RotatingFileLogger(name, () => Configurations[name]));
+            return new RotatingFileLogger(_loggers.GetOrAdd(categoryName, name => new RotatingFileLoggerFactory(name, () => Configurations[name])));
         }
         else
         {
-            return _loggers.GetOrAdd("default", name => new RotatingFileLogger(name, () => Configurations.GetOrAdd(name, name => new Configuration())));
+            return new RotatingFileLogger(_loggers.GetOrAdd("default", name => new RotatingFileLoggerFactory(name, () => Configurations.GetOrAdd(name, name => new Configuration()))));
         }
     }
 

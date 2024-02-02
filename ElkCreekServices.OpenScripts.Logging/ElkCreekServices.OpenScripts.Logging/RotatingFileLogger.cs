@@ -260,7 +260,7 @@ public sealed class RotatingFileLogger : IScopedLogger
                             if (logfile.Exists)
                             {
                                 //check if log file is too large
-                                if (logfile.Length > (1024 * _configuration.MaximumLogFileSizeKB))
+                                if (logfile.Length > 0 && (logfile.Length / 1024) > _configuration.MaximumLogFileSizeKB)
                                 {
                                     //rotate the log file out
                                     CloseWriter();

@@ -90,7 +90,8 @@ internal sealed class RotatingFileLogger : IScopedLogger
         // get the formatted message
         var message = $"{(string.IsNullOrWhiteSpace(scopeEntry) ? string.Empty : "[" + scopeEntry + "] ")}{formatter(state, exception)}";
 
-        _factory.Log<string>(logLevel, eventId, message, exception, (s, e) => s);
+        //microsoft formatter just returns the state value so we will include our own formatter 
+        _factory.Log<string>(logLevel, eventId, message, exception, (s, e) => { return s + (e != null ? Environment.NewLine + "Exception: " + e.Message + "\n" + e.StackTrace : string.Empty); });
     }
 
    

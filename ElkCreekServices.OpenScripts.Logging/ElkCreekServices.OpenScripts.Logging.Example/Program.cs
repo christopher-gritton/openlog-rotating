@@ -59,6 +59,16 @@ class Program
         ILogger logger2 = loggerFactory.CreateLogger("chat");
         ILogger logger3  = loggerFactory.CreateLogger("custom");
 
+        try
+        {
+            throw new Exception("This is a test exception");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred in the main method");
+        }
+      
+
         logger.LogInformation("Example log message");
         logger2.LogInformation("Example log message 2");
         logger3.LogInformation("Example log message 3");

@@ -16,19 +16,19 @@ public class RotatingFileLoggerFactory : IScopedLogger
     // flag: is disposed
     private bool _disposedValue;
     // writer lock
-    private object writerLock = new { writerlock = "locked" };
+    private readonly object _writerLock = new { writerlock = "locked" };
     // queue lock
-    private object queueLock = new { queuelock = "locked" };
+    private readonly object _queueLock = new { queuelock = "locked" };
     // scope lock
-    private object scopeLock = new { scopelock = "locked" };
+    private readonly object _scopeLock = new { scopelock = "locked" };
     // console lock
-    private static object consoleLock = new { consolelock = "locked" };
+    private static readonly object s_consoleLock = new { consolelock = "locked" };
     // cancellation token source
-    private CancellationTokenSource _cts = new CancellationTokenSource();
+    private readonly CancellationTokenSource _cts = new();
     // queue of log entries
-    private Queue<QueuedLogEntry> _queued = new Queue<QueuedLogEntry>();
+    private readonly Queue<QueuedLogEntry> _queued = new();
     // Thread for processing log entries
-    System.Threading.Thread? _watchlog;
+    readonly System.Threading.Thread? _watchlog;
     //streamwriter
     StreamWriter? _sw;
     private readonly string _name;
@@ -37,15 +37,18 @@ public class RotatingFileLoggerFactory : IScopedLogger
     // default configuration in case one isn't provided
     public static Configurations.Configuration DefaultConfiguration { get; } = new Configurations.Configuration();
     public string ScopeId { get; private set; } = string.Empty;
+    public string Name => _name;
 
     public RotatingFileLoggerFactory(string name, Func<Configurations.Configuration> getConfiguration)
     {
         _name = name;
         _configuration = getConfiguration();
         //start the log watcher
-        _watchlog = new System.Threading.Thread((token) => WatchLogging((CancellationToken)token!));
-        _watchlog.IsBackground = false;
-        _watchlog.Priority = ThreadPriority.Lowest;
+        _watchlog = new System.Threading.Thread((token) => WatchLogging((CancellationToken)token!))
+        {
+            IsBackground = false,
+            Priority = ThreadPriority.Lowest
+        };
         _watchlog.Start(_cts.Token);
     }
 
@@ -68,9 +71,9 @@ public class RotatingFileLoggerFactory : IScopedLogger
     {
         //This scope object doesn't need an external scope so setting it to null
         var newScope = new ScopedLogger(state.ToString() ?? Guid.NewGuid().ToString(), this, null, scopeid);
-        lock (scopeLock)
+        lock (_scopeLock)
         {
-            this._scopedLoggers.Add(newScope);
+            _scopedLoggers.Add(newScope);
         }
 
         //remove from scoped loggers when disposed
@@ -78,12 +81,11 @@ public class RotatingFileLoggerFactory : IScopedLogger
         {
             if (disposing)
             {
-                var scoped = sender as ScopedLogger;
-                if (scoped != null)
+                if (sender is ScopedLogger scoped)
                 {
-                    lock (scopeLock)
+                    lock (_scopeLock)
                     {
-                        this._scopedLoggers.Remove(scoped);
+                        _scopedLoggers.Remove(scoped);
                     }
                 }
             }
@@ -107,7 +109,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        var config = _configuration ?? DefaultConfiguration;
+        Configuration config = _configuration ?? DefaultConfiguration;
 
         //if the log level is not enabled, return
         if (!IsEnabled(logLevel))
@@ -117,25 +119,25 @@ public class RotatingFileLoggerFactory : IScopedLogger
 
         string scopeEntry = string.Empty;
         //log the message with scopes if exist
-        lock (scopeLock)
+        lock (_scopeLock)
         {
             scopeEntry = string.Join(":", _scopedLoggers.Select(x => x.Id).Distinct());
         }
 
         // get the formatted message
-        var message = formatter(state, exception);
+        string message = formatter(state, exception);
 
         //create a log entry
         var queuedEntry = new QueuedLogEntry()
         {
-            Message = $"[{eventId}, {logLevel.ToString()}] {(string.IsNullOrWhiteSpace(scopeEntry) ? string.Empty : "[" + scopeEntry + "] ")}{message}",
+            Message = $"[{eventId}, {logLevel}] {(string.IsNullOrWhiteSpace(scopeEntry) ? string.Empty : "[" + scopeEntry + "] ")}{message}",
             IncludeDateTime = config.IncludeDateTime,
             IsUtcTime = config.IsUtcTime,
             LogLevel = logLevel
         };
 
         //queue the log entry
-        lock (queueLock)
+        lock (_queueLock)
         {
             _queued.Enqueue(queuedEntry);
         }
@@ -147,12 +149,9 @@ public class RotatingFileLoggerFactory : IScopedLogger
     /// </summary>
     private void CloseWriter()
     {
-        lock (writerLock)
+        lock (_writerLock)
         {
-            if (_sw != null)
-            {
-                _sw.Dispose();
-            }
+            _sw?.Dispose();
         }
     }
 
@@ -164,9 +163,9 @@ public class RotatingFileLoggerFactory : IScopedLogger
     /// </remarks>
     private void InitWriter()
     {
-        var config = _configuration ?? DefaultConfiguration;
+        Configuration config = _configuration ?? DefaultConfiguration;
 
-        lock (writerLock)
+        lock (_writerLock)
         {
             if (config.Filename != null)
             {
@@ -174,10 +173,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                 {
                     config.Filename.Directory.Create();
                 }
-                if (_sw != null)
-                {
-                    _sw.Dispose();
-                }
+                _sw?.Dispose();
                 try
                 {
                     _sw = new StreamWriter(config.Filename.FullName, true, Encoding.UTF8, 65536) { AutoFlush = true };
@@ -191,7 +187,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                         //attempt to create a new file name in case another logger with same name is writing to the file
                         string extension = config.Filename.Extension;
                         string filename = config.Filename.Name.Replace(extension, "");
-                        string newname = $"{filename}_[{Guid.NewGuid().ToString()}]".CreateValidLogFileName();
+                        string newname = $"{filename}_[{Guid.NewGuid()}]".CreateValidLogFileName();
                         config.Filename = new FileInfo(System.IO.Path.Combine(config.Filename.DirectoryName!, newname + extension));
                         _sw = new StreamWriter(config.Filename.FullName, true, Encoding.UTF8, 65536) { AutoFlush = true };
                     }
@@ -229,7 +225,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                     if (e != null)
                     {
                         //get logging directory and open log file
-                        System.Text.StringBuilder sb = new StringBuilder();
+                        System.Text.StringBuilder sb = new();
 
                         //write log entry
                         sb.Append(e.ToString());
@@ -239,9 +235,9 @@ public class RotatingFileLoggerFactory : IScopedLogger
                             //only write to console if log level is enabled
                             if (e.LogLevel != LogLevel.None && e.LogLevel >= _configuration.ConsoleMinLevel)
                             {
-                                lock (consoleLock)
+                                lock (s_consoleLock)
                                 {
-                                    var color = Console.ForegroundColor;
+                                    ConsoleColor color = Console.ForegroundColor;
                                     Console.ForegroundColor = e.LogLevel switch
                                     {
                                         LogLevel.Trace => ConsoleColor.DarkGray,
@@ -261,7 +257,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                         try
                         {
                             //get the log file
-                            System.IO.FileInfo logfile = new System.IO.FileInfo(_configuration.Filename.FullName);
+                            System.IO.FileInfo logfile = new(_configuration.Filename.FullName);
                             //rotate log files
                             if (logfile.Exists)
                             {
@@ -281,7 +277,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                                 if (logfile.Directory != null)
                                 {
                                     //purge rotated logfiles / use enumeratefiles to get rotated log files will be more efficient than using getfiles
-                                    foreach (var d in logfile.Directory.EnumerateFiles($"*{logfile.Name.Replace(logfile.Extension, "")}_[ROT-*", System.IO.SearchOption.TopDirectoryOnly))
+                                    foreach (FileInfo d in logfile.Directory.EnumerateFiles($"*{logfile.Name.Replace(logfile.Extension, "")}_[ROT-*", System.IO.SearchOption.TopDirectoryOnly))
                                     {
                                         //check if rotated log file is older than the purge setting
                                         if (DateTime.Now.Subtract(d.LastWriteTime).TotalDays > _configuration.PurgeAfterDays)
@@ -293,7 +289,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                                 }
                             }
 
-                            lock (writerLock)
+                            lock (_writerLock)
                             {
                                 //write the log entry
                                 _sw!.WriteLine(sb.ToString().TrimEnd());
@@ -333,7 +329,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
         } while (true);
 
         //close the writer
-        if (_sw != null) _sw.Dispose();
+        _sw?.Dispose();
     }
 
     private void Dispose(bool disposing)
@@ -353,11 +349,8 @@ public class RotatingFileLoggerFactory : IScopedLogger
                 }
             }
             //join the background thread
-            if (_watchlog != null)
-            {
-                //timeout after 5 minutes
-                _watchlog.Join(300000);
-            }
+            //timeout after 5 minutes
+            _watchlog?.Join(300000);
             //dispose the streamwriter
             if (_sw != null)
             {
@@ -373,9 +366,9 @@ public class RotatingFileLoggerFactory : IScopedLogger
             //dispose scopes
             if (disposing)
             {
-                lock (scopeLock)
+                lock (_scopeLock)
                 {
-                    foreach (var scope in _scopedLoggers)
+                    foreach (ScopedLogger scope in _scopedLoggers)
                     {
                         scope.Dispose();
                     }

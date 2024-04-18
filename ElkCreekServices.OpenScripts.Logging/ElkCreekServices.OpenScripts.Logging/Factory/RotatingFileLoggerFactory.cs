@@ -5,14 +5,14 @@ using ElkCreekServices.OpenScripts.Logging.Scope;
 using Microsoft.Extensions.Logging;
 
 namespace ElkCreekServices.OpenScripts.Logging.Factory;
-public class RotatingFileLoggerFactory : IScopedLogger
+public sealed class RotatingFileLoggerFactory : IScopedLogger
 {
 
     private readonly ConcurrentDictionary<string, RotatingFileLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
 
 
     // list of scoped loggers
-    private List<ScopedLogger> _scopedLoggers = new List<ScopedLogger>();
+    private readonly List<ScopedLogger> _scopedLoggers = [];
     // flag: is disposed
     private bool _disposedValue;
     // writer lock
@@ -31,17 +31,16 @@ public class RotatingFileLoggerFactory : IScopedLogger
     readonly System.Threading.Thread? _watchlog;
     //streamwriter
     StreamWriter? _sw;
-    private readonly string _name;
     private readonly Func<RotatingLoggerConfiguration> _configuration;
 
     // default configuration in case one isn't provided
     public static Configurations.RotatingLoggerConfiguration DefaultConfiguration { get; } = new Configurations.RotatingLoggerConfiguration();
     public string ScopeId { get; private set; } = string.Empty;
-    public string Name => _name;
+    public string Name { get; }
 
     public RotatingFileLoggerFactory(string name, Func<Configurations.RotatingLoggerConfiguration> getConfiguration)
     {
-        _name = name;
+        Name = name;
         _configuration = getConfiguration;
         //start the log watcher
         _watchlog = new System.Threading.Thread((token) => WatchLogging((CancellationToken)token!))

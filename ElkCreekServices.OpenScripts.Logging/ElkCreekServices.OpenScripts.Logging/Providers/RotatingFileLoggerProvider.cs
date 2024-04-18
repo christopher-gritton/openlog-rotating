@@ -15,7 +15,7 @@ namespace ElkCreekServices.OpenScripts.Logging.Providers;
 public sealed class RotatingFileLoggerProvider : ILoggerProvider
 {
 
-    private IDisposable? _onchangeToken;
+    private readonly IDisposable? _onchangeToken;
     private readonly ConcurrentDictionary<string, RotatingLoggerConfiguration> _configurations = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, RotatingFileLoggerFactory> _loggers = new(StringComparer.OrdinalIgnoreCase);
 

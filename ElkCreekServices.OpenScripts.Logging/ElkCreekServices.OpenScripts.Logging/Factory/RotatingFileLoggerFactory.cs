@@ -262,12 +262,14 @@ public sealed class RotatingFileLoggerFactory : IScopedLogger
                             {
                                 logfile.Refresh();
                                 //check if log file is too large
-                                int maxsize = _configuration().MaximumLogFileSizeKB;
-                                long fullLength = logfile.Length + sb.Length;
-                                System.Diagnostics.Trace.WriteLine($"Log file size: {fullLength} bytes");
-                                System.Diagnostics.Trace.WriteLine($"Max log file size: {maxsize} KiloBytes");
-                                if (logfile.Length > 0 && maxsize > 0 && (fullLength >= (maxsize * 1024)))
+                                long maxsize = (_configuration().MaximumLogFileSizeKB * 1024);
+                                long fullLength = logfile.Length + sb.Length;                             
+                                if (maxsize < 0) maxsize = long.MaxValue;
+                                if (logfile.Length > 0 && maxsize > 0 && (fullLength >= (maxsize)))
                                 {
+                                    System.Diagnostics.Trace.WriteLine($"Log file size: {fullLength} bytes");
+                                    System.Diagnostics.Trace.WriteLine($"Max log file size: {maxsize} Bytes");
+                                    System.Diagnostics.Trace.WriteLine($"Rotating log file: {logfile.FullName}");
                                     //rotate the log file out
                                     CloseWriter();
                                     logfile.MoveTo($"{logfile.FullName.Replace(logfile.Extension, "")}_[ROT-{DateTime.UtcNow.ToOADate()}]{logfile.Extension}");

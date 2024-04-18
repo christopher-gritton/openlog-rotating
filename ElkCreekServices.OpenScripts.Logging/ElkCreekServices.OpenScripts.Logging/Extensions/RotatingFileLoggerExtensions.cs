@@ -37,10 +37,7 @@ public static class RotatingFileLoggerExtensions
     /// <exception cref="ArgumentNullException"></exception>
     public static ILoggingBuilder AddRotatingFileLogger(this ILoggingBuilder builder, Action<IRotatingLoggingConfigurations> configure)
     {
-        if (configure == null)
-        {
-            throw new ArgumentNullException(nameof(configure));
-        }
+        ArgumentNullException.ThrowIfNull(configure);
         builder.AddRotatingFileLogger();      
         builder.Services.Configure<RotatingLoggerConfigurations>(config => configure(config));
         return builder;
@@ -57,10 +54,9 @@ public static class RotatingFileLoggerExtensions
     /// <exception cref="ArgumentNullException"></exception>
     public static IScopedLogger BeginScope<TState>(this ILogger logger, TState state, string scopeid) where TState : notnull
     {
-        if (logger == null) throw new ArgumentNullException("logger", "The logger cannot be null when calling BeginScope.");
-        IScopedLogger? scopedLogger = null;
+        if (logger == null) throw new ArgumentNullException(nameof(logger), "The logger cannot be null when calling BeginScope.");
         IDisposable? externalscope = logger.BeginScope(state);
-        scopedLogger = new ScopedLogger(state?.ToString() ?? Guid.NewGuid().ToString(), logger, externalscope, scopeid);
+        IScopedLogger? scopedLogger = new ScopedLogger(state?.ToString() ?? Guid.NewGuid().ToString(), logger, externalscope, scopeid);
         return scopedLogger;
     }
 
@@ -69,29 +65,20 @@ public static class RotatingFileLoggerExtensions
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="message"></param>
-    public static void d(this ILogger logger, string message)
-    {
-        logger.LogDebug(message);
-    }
+    public static void d(this ILogger logger, string message) => logger.LogDebug("{message}", message);
 
     /// <summary>
     /// Shortcut to log an informational message
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="message"></param>
-    public static void i(this ILogger logger, string message)
-    {
-        logger.LogInformation(message);
-    }
+    public static void i(this ILogger logger, string message) => logger.LogInformation("{message}", message);
 
     /// <summary>
     /// Shortcut to log a warning message
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="message"></param>
-    public static void w(this ILogger logger, string message)
-    {
-        logger.LogWarning(message);
-    }
+    public static void w(this ILogger logger, string message) => logger.LogWarning("{message}", message);
 
 }

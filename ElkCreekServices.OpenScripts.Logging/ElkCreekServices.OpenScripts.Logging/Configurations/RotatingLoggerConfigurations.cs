@@ -16,13 +16,13 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
     /// <exception cref="Exception"></exception>
     public void Add(RotatingLoggerConfiguration configuration, bool overwrite = false)
     {
-        if (Configurations == null) Configurations = [];
+        Configurations ??= [];
         if (Configurations.FirstOrDefault(c => (c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true)) != null)
         {
             if (overwrite)
             {
                 Configurations = Configurations.Where(c => !(c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true));
-                Configurations = Configurations.Concat(new[] { configuration });
+                Configurations = Configurations.Concat([configuration]);
             }
             else
             {
@@ -31,7 +31,7 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
         }
          else
         {
-            Configurations = Configurations.Concat(new[] { configuration });
+            Configurations = Configurations.Concat([configuration]);
         }  
        
     }
@@ -43,9 +43,9 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
     /// <param name="configure"></param>
     public void Override(string name, Action<RotatingLoggerConfiguration> configure)
     {
-        if (Configurations == null) Configurations = [ new RotatingLoggerConfiguration() {  Name = name }];
+        Configurations ??= [ new RotatingLoggerConfiguration() {  Name = name }];
         RotatingLoggerConfiguration? configuration = Configurations.FirstOrDefault(c => c.Name == name || c.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true);
-        if (configuration == null) Configurations = Configurations.Concat(new[] { new RotatingLoggerConfiguration() { Name = name } });
+        if (configuration == null) Configurations = Configurations.Concat([new RotatingLoggerConfiguration() { Name = name }]);
         configure(Configurations.FirstOrDefault(c => c.Name == name || c.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)!);   
     }
 }

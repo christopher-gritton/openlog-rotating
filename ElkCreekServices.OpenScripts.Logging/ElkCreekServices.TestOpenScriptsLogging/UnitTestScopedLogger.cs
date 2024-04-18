@@ -19,16 +19,17 @@ public class UnitTestScopedLogger
                 .AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("System", LogLevel.Warning)
                 .AddFilter("TestOpenScriptsLogging", LogLevel.Debug)
-                .AddRotatingFileLogger(() => new RotatingLoggerConfiguration()
-                {
-                    LogLevel = LogLevel.Debug,
-                    ConsoleLoggingEnabled = true,
-                    ConsoleMinLevel = LogLevel.Debug,
-                    Filename = new System.IO.FileInfo("log_scoped_multilogger.txt"),
-                    IncludeDateTime = true,
-                    IsUtcTime = true,
-                    PurgeAfterDays = 2,
-                });
+                .AddRotatingFileLogger(config =>
+                    config.Add(new RotatingLoggerConfiguration()
+                    {
+                        LogLevel = LogLevel.Debug,
+                        ConsoleLoggingEnabled = true,
+                        ConsoleMinLevel = LogLevel.Debug,
+                        Filename = new System.IO.FileInfo("log_scoped_multilogger.txt"),
+                        IncludeDateTime = true,
+                        IsUtcTime = true,
+                        PurgeAfterDays = 2,
+                    }));
         });
        
     }

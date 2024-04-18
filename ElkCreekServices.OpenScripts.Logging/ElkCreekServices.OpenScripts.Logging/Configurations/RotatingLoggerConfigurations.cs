@@ -1,4 +1,6 @@
-﻿namespace ElkCreekServices.OpenScripts.Logging.Configurations;
+﻿using System.Reflection;
+
+namespace ElkCreekServices.OpenScripts.Logging.Configurations;
 
 /// <summary>
 /// Collection of logging configurations for rotating loggers
@@ -14,19 +16,24 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
     /// <param name="configuration"></param>
     /// <param name="overwrite"></param>
     /// <exception cref="Exception"></exception>
-    public void Add(RotatingLoggerConfiguration configuration, bool overwrite = false)
+    public void Add(RotatingLoggerConfiguration configuration, OverwriteOptions overwriteOptions = OverwriteOptions.None)
     {
         Configurations ??= [];
         if (Configurations.FirstOrDefault(c => (c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true)) != null)
         {
-            if (overwrite)
+            switch (overwriteOptions)
             {
-                Configurations = Configurations.Where(c => !(c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true));
-                Configurations = Configurations.Concat([configuration]);
-            }
-            else
-            {
-                throw new Exception("Logging configuration with the same name already exists");
+                case OverwriteOptions.None:
+                    return;
+                case OverwriteOptions.Overwrite:
+                    Configurations = Configurations.Where(c => !(c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true));
+                    Configurations = Configurations.Concat([configuration]);
+                    break;
+                case OverwriteOptions.Update:
+                    Configurations.FirstOrDefault(c => c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true)?.Update(configuration);
+                    break;
+                case OverwriteOptions.Throw:
+                    throw new Exception("Logging configuration with the same name already exists");
             }
         }
          else
@@ -34,6 +41,31 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
             Configurations = Configurations.Concat([configuration]);
         }  
        
+    }
+
+    /// <summary>
+    /// Add a new logging configuration to the collection
+    /// Only updates the properties listed in the parameters if exists already
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <param name="propertiesToUpdateOnExisting"></param>
+    public void Add(RotatingLoggerConfiguration configuration, params string[] propertiesToUpdateOnExisting)
+    {
+        Configurations ??= [];
+        RotatingLoggerConfiguration? existing = Configurations.FirstOrDefault(c => c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true);
+        if (existing != null)
+        {
+            if (propertiesToUpdateOnExisting == null || propertiesToUpdateOnExisting.Length == 0) return;
+            foreach (string property in propertiesToUpdateOnExisting)
+            {
+                PropertyInfo? prop = typeof(RotatingLoggerConfiguration).GetProperty(property);
+                prop?.SetValue(existing, prop.GetValue(configuration));
+            }
+        }
+        else
+        {
+            Configurations = Configurations.Concat([configuration]);
+        }
     }
 
     /// <summary>

@@ -5,8 +5,16 @@ public interface IRotatingLoggingConfigurations
     /// Add a new logging configuration to the collection
     /// </summary>
     /// <param name="configuration"></param>
-    /// <param name="overwrite">Optionally overwrite otherwise an exception is thrown if exists</param>
-    void Add(RotatingLoggerConfiguration configuration, bool overwrite = false);
+    /// <param name="overwriteOptions"></param>
+    void Add(RotatingLoggerConfiguration configuration, OverwriteOptions overwriteOptions = OverwriteOptions.None);
+
+    /// <summary>
+    /// Add a new logging configuration to the collection
+    /// Only updates the properties listed in the parameters if exists already
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <param name="propertiesToUpdateOnExisting">If exists update existing with only properties listed as parameters</param>
+    void Add(RotatingLoggerConfiguration configuration, params string[] propertiesToUpdateOnExisting);
     /// <summary>
     /// Update prarameters of an existing configuration
     /// </summary>

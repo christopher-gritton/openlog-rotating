@@ -80,33 +80,38 @@ class Program
 {
     static void Main(string[] args)
     {
-        using RotatingFileLogger logger = new RotatingFileLogger("Example Logger", () =>
-        {
-            return new Configurations.Configuration()
-            {
-                LogLevel = LogLevel.Debug,
-                ConsoleLoggingEnabled = true,
-                Filename = new System.IO.FileInfo("internal_log.txt"),
-                IncludeDateTime = true,
-                IsUtcTime = true,
-                PurgeAfterDays = 2
-            };
-        });
 
-        logger.LogInformation("Example log message"); //extension methods for log levels
-
-        using (var scopedLogger = logger.BeginScope("scopeId"))
+        using (RotatingFileLoggerFactory logger = new RotatingFileLoggerFactory(string.Empty, () => new RotatingLoggerConfiguration()
         {
-            logger.LogInformation("Example scoped log message");
-            using (var nestedScopedLogger = logger.BeginScope("nestedScopeId"))
+            LogLevel = LogLevel.Trace,
+            Filename = new System.IO.FileInfo("./logging/log_example.txt"),
+        }))
+        {
+            try
             {
-                logger.LogInformation("Example nested scoped log message");
-                logger.LogWarning("Example nested scoped log warning");
+                throw new Exception("This is a test exception");
             }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occurred in the main method");
+            }
+
+            logger.LogInformation("Example log message"); //extension methods for log levels
+
+            using (logger.BeginScope("scopeId"))
+            {
+                logger.LogInformation("Example scoped log message");
+                using (logger.BeginScope("nestedScopeId"))
+                {
+                    logger.LogInformation("Example nested scoped log message");
+                    logger.LogWarning("Example nested scoped log warning");
+                }
+            }
+
+            //non - extension methods for log levels
+            logger.Log(LogLevel.Information, new EventId(0), "Example log message without extension methods");
         }
 
-        //non - extension methods for log levels
-        logger.Log(LogLevel.Information, new EventId(0), "Example log message without extension methods");
     }
 }
 

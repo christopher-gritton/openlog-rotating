@@ -262,7 +262,8 @@ public class RotatingFileLoggerFactory : IScopedLogger
                             if (logfile.Exists)
                             {
                                 //check if log file is too large
-                                if (logfile.Length > 0 && (logfile.Length / 1024) > _configuration().MaximumLogFileSizeKB)
+                                int maxsize = _configuration().MaximumLogFileSizeKB;
+                                if (logfile.Length > 0 && ((logfile.Length + sb.Length)) >= (maxsize * 1024))
                                 {
                                     //rotate the log file out
                                     CloseWriter();

@@ -44,8 +44,8 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
     public void Override(string name, Action<RotatingLoggerConfiguration> configure)
     {
         if (Configurations == null) Configurations = [ new RotatingLoggerConfiguration() {  Name = name }];
-        RotatingLoggerConfiguration? configuration = Configurations.FirstOrDefault(c => c.Name == name);
+        RotatingLoggerConfiguration? configuration = Configurations.FirstOrDefault(c => c.Name == name || c.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true);
         if (configuration == null) Configurations = Configurations.Concat(new[] { new RotatingLoggerConfiguration() { Name = name } });
-        configure(Configurations.FirstOrDefault(c => c.Name == name)!);   
+        configure(Configurations.FirstOrDefault(c => c.Name == name || c.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)!);   
     }
 }

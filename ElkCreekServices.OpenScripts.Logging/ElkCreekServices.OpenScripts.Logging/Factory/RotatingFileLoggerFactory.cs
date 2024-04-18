@@ -32,17 +32,17 @@ public class RotatingFileLoggerFactory : IScopedLogger
     //streamwriter
     StreamWriter? _sw;
     private readonly string _name;
-    private readonly Configuration _configuration;
+    private readonly Func<RotatingLoggerConfiguration> _configuration;
 
     // default configuration in case one isn't provided
-    public static Configurations.Configuration DefaultConfiguration { get; } = new Configurations.Configuration();
+    public static Configurations.RotatingLoggerConfiguration DefaultConfiguration { get; } = new Configurations.RotatingLoggerConfiguration();
     public string ScopeId { get; private set; } = string.Empty;
     public string Name => _name;
 
-    public RotatingFileLoggerFactory(string name, Func<Configurations.Configuration> getConfiguration)
+    public RotatingFileLoggerFactory(string name, Func<Configurations.RotatingLoggerConfiguration> getConfiguration)
     {
         _name = name;
-        _configuration = getConfiguration();
+        _configuration = getConfiguration;
         //start the log watcher
         _watchlog = new System.Threading.Thread((token) => WatchLogging((CancellationToken)token!))
         {
@@ -100,7 +100,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
     /// <returns></returns>
     public bool IsEnabled(LogLevel logLevel)
     {
-        if (logLevel >= (_configuration ?? DefaultConfiguration).LogLevel && logLevel != LogLevel.None)
+        if (logLevel >= (_configuration() ?? DefaultConfiguration).LogLevel && logLevel != LogLevel.None)
         {
             return true;
         }
@@ -109,7 +109,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        Configuration config = _configuration ?? DefaultConfiguration;
+        RotatingLoggerConfiguration config = _configuration() ?? DefaultConfiguration;
 
         //if the log level is not enabled, return
         if (!IsEnabled(logLevel))
@@ -163,7 +163,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
     /// </remarks>
     private void InitWriter()
     {
-        Configuration config = _configuration ?? DefaultConfiguration;
+        RotatingLoggerConfiguration config = _configuration() ?? DefaultConfiguration;
 
         lock (_writerLock)
         {
@@ -201,7 +201,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
         //initialize the writer
         InitWriter();
 
-        _configuration.FilePathChanged += (model) =>
+        _configuration().FilePathChanged += (model) =>
         {
             //we need to initialize the writer again
             InitWriter();
@@ -214,7 +214,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                 if (_queued.Count > 0)
                 {
                     //make sure log file assigned
-                    if (_configuration.Filename == null) break;
+                    if (_configuration().Filename == null) break;
 
                     QueuedLogEntry e;
                     lock (_queued)
@@ -230,10 +230,10 @@ public class RotatingFileLoggerFactory : IScopedLogger
                         //write log entry
                         sb.Append(e.ToString());
                         //if configuration includes write to console and console is enabled, write to console
-                        if (_configuration.ConsoleLoggingEnabled == true && Environment.UserInteractive)
+                        if (_configuration().ConsoleLoggingEnabled == true && Environment.UserInteractive)
                         {
                             //only write to console if log level is enabled
-                            if (e.LogLevel != LogLevel.None && e.LogLevel >= _configuration.ConsoleMinLevel)
+                            if (e.LogLevel != LogLevel.None && e.LogLevel >= _configuration().ConsoleMinLevel)
                             {
                                 lock (s_consoleLock)
                                 {
@@ -257,22 +257,22 @@ public class RotatingFileLoggerFactory : IScopedLogger
                         try
                         {
                             //get the log file
-                            System.IO.FileInfo logfile = new(_configuration.Filename.FullName);
+                            System.IO.FileInfo logfile = new(_configuration()!.Filename!.FullName);
                             //rotate log files
                             if (logfile.Exists)
                             {
                                 //check if log file is too large
-                                if (logfile.Length > 0 && (logfile.Length / 1024) > _configuration.MaximumLogFileSizeKB)
+                                if (logfile.Length > 0 && (logfile.Length / 1024) > _configuration().MaximumLogFileSizeKB)
                                 {
                                     //rotate the log file out
                                     CloseWriter();
-                                    logfile.MoveTo($"{logfile.FullName.Replace(logfile.Extension, "")}_[ROT-{DateTime.UtcNow.ToOADate().ToString()}]{logfile.Extension}");
-                                    logfile = new System.IO.FileInfo(_configuration.Filename.FullName);
+                                    logfile.MoveTo($"{logfile.FullName.Replace(logfile.Extension, "")}_[ROT-{DateTime.UtcNow.ToOADate()}]{logfile.Extension}");
+                                    logfile = new System.IO.FileInfo(_configuration()!.Filename!.FullName);
                                     InitWriter();
                                 }
                             }
                             //only purge rotated files if setting above 0
-                            if (_configuration.PurgeAfterDays > 0)
+                            if (_configuration().PurgeAfterDays > 0)
                             {
                                 if (logfile.Directory != null)
                                 {
@@ -280,7 +280,7 @@ public class RotatingFileLoggerFactory : IScopedLogger
                                     foreach (FileInfo d in logfile.Directory.EnumerateFiles($"*{logfile.Name.Replace(logfile.Extension, "")}_[ROT-*", System.IO.SearchOption.TopDirectoryOnly))
                                     {
                                         //check if rotated log file is older than the purge setting
-                                        if (DateTime.Now.Subtract(d.LastWriteTime).TotalDays > _configuration.PurgeAfterDays)
+                                        if (DateTime.Now.Subtract(d.LastWriteTime).TotalDays > _configuration().PurgeAfterDays)
                                         {
                                             //delete the file
                                             d.Delete();

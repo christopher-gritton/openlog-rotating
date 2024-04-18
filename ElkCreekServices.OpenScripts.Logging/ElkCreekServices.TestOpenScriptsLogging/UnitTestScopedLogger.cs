@@ -19,7 +19,7 @@ public class UnitTestScopedLogger
                 .AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("System", LogLevel.Warning)
                 .AddFilter("TestOpenScriptsLogging", LogLevel.Debug)
-                .AddRotatingFileLogger(() => new Configuration()
+                .AddRotatingFileLogger(() => new RotatingLoggerConfiguration()
                 {
                     LogLevel = LogLevel.Debug,
                     ConsoleLoggingEnabled = true,

@@ -1,4 +1,6 @@
 ﻿using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace ElkCreekServices.OpenScripts.Logging.Configurations;
@@ -11,7 +13,7 @@ namespace ElkCreekServices.OpenScripts.Logging.Configurations;
 /// </remarks>
 [Serializable]
 [DataContract]
-public class Configuration
+public class RotatingLoggerConfiguration
 {
 
     private FileInfo? _filename;
@@ -19,12 +21,16 @@ public class Configuration
     internal delegate void OnFilePathChanged(System.IO.FileInfo filepath);
     internal event OnFilePathChanged? FilePathChanged;
 
-    public Configuration()
+
+    public RotatingLoggerConfiguration()
     {
 
     }
 
-    public string Id { get; private set; } = Guid.NewGuid().ToString();
+    /// <summary>
+    /// The name of the logger
+    /// </summary>
+    public string Name { get; set; } = null!;
 
     /// <summary>
     /// The logging level
@@ -54,16 +60,27 @@ public class Configuration
     /// <summary>
     /// Name of file if configured
     /// </summary>
+    [JsonIgnore]
+    [IgnoreDataMember]
     public FileInfo? Filename
     {
         get { return _filename; }
         set { _filename = value; if (FilePathChanged != null) FilePathChanged(value!); }
     }
 
-   /// <summary>
-   /// Include date/time in log entries
-   /// </summary>
-   public bool IncludeDateTime { get; set; } = true;
+    [JsonPropertyName("Filename")]
+    [DataMember(Name = "Filename")]
+    [ConfigurationKeyName("Filename")]
+    public string FilenameString
+    {
+        get { return _filename?.FullName ?? string.Empty; }
+        set { _filename = new FileInfo(value); if (FilePathChanged != null) FilePathChanged(_filename); }
+    }
+
+    /// <summary>
+    /// Include date/time in log entries
+    /// </summary>
+    public bool IncludeDateTime { get; set; } = true;
 
     /// <summary>
     /// Set date/time format to use UTC

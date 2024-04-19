@@ -22,7 +22,7 @@ public sealed class RotatingFileLoggerProvider : ILoggerProvider
     public RotatingFileLoggerProvider(IOptionsMonitor<RotatingLoggerConfigurations> config)
     {
         AddOrUpdateConfigurations(config.CurrentValue);
-        _onchangeToken = config.OnChange(updatedConfig => AddOrUpdateConfigurations(updatedConfig));     
+        _onchangeToken = config.OnChange(AddOrUpdateConfigurations);     
     }
 
     private void AddOrUpdateConfigurations(RotatingLoggerConfigurations updatedConfig)

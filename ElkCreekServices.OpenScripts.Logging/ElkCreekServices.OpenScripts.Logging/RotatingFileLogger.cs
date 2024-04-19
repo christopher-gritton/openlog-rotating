@@ -74,11 +74,6 @@ internal sealed class RotatingFileLogger : IScopedLogger
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        //if the log level is not enabled, return
-        if (!IsEnabled(logLevel))
-        {
-            return;
-        }
 
         string scopeEntry = string.Empty;
         //log the message with scopes if exist

@@ -110,12 +110,6 @@ public sealed class RotatingFileLoggerFactory : IScopedLogger
     {
         RotatingLoggerConfiguration config = _configuration() ?? DefaultConfiguration;
 
-        //if the log level is not enabled, return
-        if (!IsEnabled(logLevel))
-        {
-            return;
-        }
-
         string scopeEntry = string.Empty;
         //log the message with scopes if exist
         lock (_scopeLock)
@@ -297,11 +291,16 @@ public sealed class RotatingFileLoggerFactory : IScopedLogger
                                     }
                                 }
 
-                                lock (_writerLock)
+                                //if the log level is not enabled, return
+                                if (IsEnabled(e.LogLevel))
                                 {
-                                    //write the log entry
-                                    _sw!.WriteLine(sb.ToString().TrimEnd());
+                                    lock (_writerLock)
+                                    {
+                                        //write the log entry
+                                        _sw!.WriteLine(sb.ToString().TrimEnd());
+                                    }
                                 }
+                               
                             }
 
                             lock (_queued)

@@ -194,6 +194,7 @@ class Program
                     {
                         try
                         {
+                            logger?.LogDebug("Debug logging on default");
                             logger?.LogInformation("Example log message");
                             logger2?.LogInformation("Example log message 2");
                             logger3?.LogInformation("Example log message 3");

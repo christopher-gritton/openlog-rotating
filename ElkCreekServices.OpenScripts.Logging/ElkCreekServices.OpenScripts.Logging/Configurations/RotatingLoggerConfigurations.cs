@@ -99,6 +99,32 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
     }
 
     /// <summary>
+    /// Add a new logging configuration to the collection
+    /// Enforce properties to be updated if exists already
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <param name="propertiesToEnforce"></param>
+    public void AddWithEnforcement(RotatingLoggerConfiguration configuration, params string[] propertiesToEnforce)
+    {
+        Configurations ??= [];
+        RotatingLoggerConfiguration? existing = Configurations.FirstOrDefault(c => c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true);
+        if (existing != null)
+        {
+            existing.UpdateIfNull(configuration);
+            if (propertiesToEnforce == null || propertiesToEnforce.Length == 0) return;
+            foreach (string property in propertiesToEnforce)
+            {
+                PropertyInfo? prop = typeof(RotatingLoggerConfiguration).GetProperty(property);
+                prop?.SetValue(existing, prop.GetValue(configuration));
+            }
+        }
+        else
+        {
+            Configurations = Configurations.Concat([configuration]);
+        }
+    }
+
+    /// <summary>
     /// Override parameters on an existing configuration
     /// </summary>
     /// <param name="name"></param>

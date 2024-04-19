@@ -26,6 +26,14 @@ public interface IRotatingLoggingConfigurations
     void Add(RotatingLoggerConfiguration configuration, bool enforceParamProperties, params string[] propertiesToUpdateOnExisting);
 
     /// <summary>
+    /// Add a new logging configuration to the collection
+    /// Update if exists where property is null and always update enforced properties
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <param name="propertiesToEnforce"></param>
+    void AddWithEnforcement(RotatingLoggerConfiguration configuration, params string[] propertiesToEnforce);
+
+    /// <summary>
     /// Update prarameters of an existing configuration
     /// </summary>
     /// <param name="name">if null or empty then default is assumed</param>

@@ -32,6 +32,9 @@ public class RotatingLoggerConfigurations : IRotatingLoggingConfigurations
                 case OverwriteOptions.Update:
                     Configurations.FirstOrDefault(c => c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true)?.Update(configuration);
                     break;
+                case OverwriteOptions.UpdateIfNull:
+                    Configurations.FirstOrDefault(c => c.Name == configuration.Name || c.Name?.Equals(configuration.Name, StringComparison.OrdinalIgnoreCase) == true)?.UpdateIfNull(configuration);
+                    break;
                 case OverwriteOptions.Throw:
                     throw new Exception("Logging configuration with the same name already exists");
             }

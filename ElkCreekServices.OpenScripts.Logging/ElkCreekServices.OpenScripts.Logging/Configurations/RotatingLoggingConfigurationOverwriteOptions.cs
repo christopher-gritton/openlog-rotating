@@ -18,6 +18,10 @@ public enum OverwriteOptions
     /// </summary>
     Update,
     /// <summary>
+    /// Update if null
+    /// </summary>
+    UpdateIfNull,
+    /// <summary>
     /// Throw an exception if exists
     /// </summary>
     Throw

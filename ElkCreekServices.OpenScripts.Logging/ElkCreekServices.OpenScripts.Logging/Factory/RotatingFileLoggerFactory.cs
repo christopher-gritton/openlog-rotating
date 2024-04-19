@@ -255,50 +255,53 @@ public sealed class RotatingFileLoggerFactory : IScopedLogger
 
                         try
                         {
-                            //get the log file
-                            System.IO.FileInfo logfile = new(_configuration()!.Filename!.FullName);
-                            //rotate log files
-                            if (logfile.Exists)
+                            if (_configuration()!.Filename != null)
                             {
-                                logfile.Refresh();
-                                //check if log file is too large
-                                long maxsize = ((_configuration().MaximumLogFileSizeKB ?? 0) * 1024);
-                                long fullLength = logfile.Length + sb.Length;                             
-                                if (maxsize < 0) maxsize = long.MaxValue;
-                                if (logfile.Length > 0 && maxsize > 0 && (fullLength >= (maxsize)))
+                                //get the log file
+                                System.IO.FileInfo logfile = new(_configuration()!.Filename!.FullName);
+                                //rotate log files
+                                if (logfile.Exists)
                                 {
-                                    System.Diagnostics.Trace.WriteLine($"Log file size: {fullLength} bytes");
-                                    System.Diagnostics.Trace.WriteLine($"Max log file size: {maxsize} Bytes");
-                                    System.Diagnostics.Trace.WriteLine($"Rotating log file: {logfile.FullName}");
-                                    //rotate the log file out
-                                    CloseWriter();
-                                    logfile.MoveTo($"{logfile.FullName.Replace(logfile.Extension, "")}_[ROT-{DateTime.UtcNow.ToOADate()}]{logfile.Extension}");
-                                    logfile = new System.IO.FileInfo(_configuration()!.Filename!.FullName);
-                                    InitWriter();
-                                }
-                            }
-                            //only purge rotated files if setting above 0
-                            if (_configuration().PurgeAfterDays > 0)
-                            {
-                                if (logfile.Directory != null)
-                                {
-                                    //purge rotated logfiles / use enumeratefiles to get rotated log files will be more efficient than using getfiles
-                                    foreach (FileInfo d in logfile.Directory.EnumerateFiles($"*{logfile.Name.Replace(logfile.Extension, "")}_[ROT-*", System.IO.SearchOption.TopDirectoryOnly))
+                                    logfile.Refresh();
+                                    //check if log file is too large
+                                    long maxsize = ((_configuration().MaximumLogFileSizeKB ?? 0) * 1024);
+                                    long fullLength = logfile.Length + sb.Length;
+                                    if (maxsize < 0) maxsize = long.MaxValue;
+                                    if (logfile.Length > 0 && maxsize > 0 && (fullLength >= (maxsize)))
                                     {
-                                        //check if rotated log file is older than the purge setting
-                                        if (DateTime.Now.Subtract(d.LastWriteTime).TotalDays > _configuration().PurgeAfterDays)
+                                        System.Diagnostics.Trace.WriteLine($"Log file size: {fullLength} bytes");
+                                        System.Diagnostics.Trace.WriteLine($"Max log file size: {maxsize} Bytes");
+                                        System.Diagnostics.Trace.WriteLine($"Rotating log file: {logfile.FullName}");
+                                        //rotate the log file out
+                                        CloseWriter();
+                                        logfile.MoveTo($"{logfile.FullName.Replace(logfile.Extension, "")}_[ROT-{DateTime.UtcNow.ToOADate()}]{logfile.Extension}");
+                                        logfile = new System.IO.FileInfo(_configuration()!.Filename!.FullName);
+                                        InitWriter();
+                                    }
+                                }
+                                //only purge rotated files if setting above 0
+                                if (_configuration().PurgeAfterDays > 0)
+                                {
+                                    if (logfile.Directory != null)
+                                    {
+                                        //purge rotated logfiles / use enumeratefiles to get rotated log files will be more efficient than using getfiles
+                                        foreach (FileInfo d in logfile.Directory.EnumerateFiles($"*{logfile.Name.Replace(logfile.Extension, "")}_[ROT-*", System.IO.SearchOption.TopDirectoryOnly))
                                         {
-                                            //delete the file
-                                            d.Delete();
+                                            //check if rotated log file is older than the purge setting
+                                            if (DateTime.Now.Subtract(d.LastWriteTime).TotalDays > _configuration().PurgeAfterDays)
+                                            {
+                                                //delete the file
+                                                d.Delete();
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            lock (_writerLock)
-                            {
-                                //write the log entry
-                                _sw!.WriteLine(sb.ToString().TrimEnd());
+                                lock (_writerLock)
+                                {
+                                    //write the log entry
+                                    _sw!.WriteLine(sb.ToString().TrimEnd());
+                                }
                             }
 
                             lock (_queued)

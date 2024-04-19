@@ -10,11 +10,21 @@ public interface IRotatingLoggingConfigurations
 
     /// <summary>
     /// Add a new logging configuration to the collection
-    /// Only updates the properties listed in the parameters if exists already
+    /// Always updates the properties listed in the parameters if exists already
     /// </summary>
     /// <param name="configuration"></param>
     /// <param name="propertiesToUpdateOnExisting">If exists update existing with only properties listed as parameters</param>
     void Add(RotatingLoggerConfiguration configuration, params string[] propertiesToUpdateOnExisting);
+
+    /// <summary>
+    /// Add a new logging configuration to the collection
+    /// Updates the properties listed in the parameters if exists already but only if encforceParamProperties is true or the property is null
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <param name="enforceParamProperties"></param>
+    /// <param name="propertiesToUpdateOnExisting"></param>
+    void Add(RotatingLoggerConfiguration configuration, bool enforceParamProperties, params string[] propertiesToUpdateOnExisting);
+
     /// <summary>
     /// Update prarameters of an existing configuration
     /// </summary>

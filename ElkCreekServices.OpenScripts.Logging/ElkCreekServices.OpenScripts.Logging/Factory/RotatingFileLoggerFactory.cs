@@ -130,8 +130,8 @@ public sealed class RotatingFileLoggerFactory : IScopedLogger
         var queuedEntry = new QueuedLogEntry()
         {
             Message = $"[{eventId}, {logLevel}] {(string.IsNullOrWhiteSpace(scopeEntry) ? string.Empty : "[" + scopeEntry + "] ")}{message}",
-            IncludeDateTime = config.IncludeDateTime,
-            IsUtcTime = config.IsUtcTime,
+            IncludeDateTime = config.IncludeDateTime ?? false,
+            IsUtcTime = config.IsUtcTime ?? false,
             LogLevel = logLevel
         };
 
@@ -262,7 +262,7 @@ public sealed class RotatingFileLoggerFactory : IScopedLogger
                             {
                                 logfile.Refresh();
                                 //check if log file is too large
-                                long maxsize = (_configuration().MaximumLogFileSizeKB * 1024);
+                                long maxsize = ((_configuration().MaximumLogFileSizeKB ?? 0) * 1024);
                                 long fullLength = logfile.Length + sb.Length;                             
                                 if (maxsize < 0) maxsize = long.MaxValue;
                                 if (logfile.Length > 0 && maxsize > 0 && (fullLength >= (maxsize)))

@@ -2,6 +2,7 @@
 
 using ElkCreekServices.OpenScripts.Logging.Configurations;
 using ElkCreekServices.OpenScripts.Logging.Factory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,11 @@ class Program
         if (true)
         {
             IHostBuilder host = Host.CreateDefaultBuilder(args);
+
+            host.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            });
 
             host.ConfigureServices((context, services) =>
             {
